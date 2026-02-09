@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class Promotion(BaseModel):
+    # Definindo o modelo de dados para as promoções, incluindo a dedupe_key para garantir a unicidade
     marketplace: str = "mercado_livre"
     item_id: str
     url: str

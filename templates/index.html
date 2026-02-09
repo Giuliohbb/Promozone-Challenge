@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promozone | Monitor de Ofertas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilo de emergência caso o Tailwind falhe */
+        #spinner { width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8 font-sans">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-extrabold text-blue-900">🚀 Promozone Challenge</h1>
+            <p class="text-gray-600">Monitoramento inteligente de preços em tempo real.</p>
+        </header>
+        
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8 border-l-4 border-blue-600">
+            <form id="scrapeForm" action="/scrape" method="post" class="flex flex-col gap-4">
+                <label class="font-semibold text-gray-700">Novo Scrape (Mercado Livre):</label>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input type="url" name="url" id="urlInput" required
+                           placeholder="Cole aqui a URL da busca (ex: iphone 15)..." 
+                           class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <button type="submit" id="submitBtn" 
+                            class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-all flex items-center justify-center min-w-[180px]">
+                        <span id="btnText">Capturar Ofertas</span>
+                        <div id="spinner" class="ml-2"></div>
+                    </button>
+                </div>
+                <p id="loadingMsg" class="text-sm text-blue-600 hidden font-medium animate-pulse">
+                    🤖 A IA está minerando os dados... Isso pode levar até 60 segundos.
+                </p>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="p-4 text-gray-600 uppercase text-xs">Produto</th>
+                        <th class="p-4 text-gray-600 uppercase text-xs">Preço</th>
+                        <th class="p-4 text-gray-600 uppercase text-xs">Desconto</th>
+                        <th class="p-4 text-gray-600 uppercase text-xs text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in promotions %}
+                    <tr class="border-b hover:bg-blue-50 transition-colors">
+                        <td class="p-4">
+                            <div class="font-bold text-gray-800 line-clamp-1">{{ item.title }}</div>
+                            <div class="text-xs text-gray-400">ID: {{ item.item_id }}</div>
+                        </td>
+                        <td class="p-4 font-mono font-bold text-gray-900">R$ {{ "{:,.2f}".format(item.price) }}</td>
+                        <td class="p-4">
+                            {% if item.discount_percent %}
+                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
+                                ↓ {{ item.discount_percent }}%
+                            </span>
+                            {% else %}<span class="text-gray-300">-</span>{% endif %}
+                        </td>
+                        <td class="p-4 text-center">
+                            <a href="{{ item.url }}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium text-sm underline">Ver Oferta</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not promotions %}
+                    <tr>
+                        <td colspan="4" class="p-12 text-center text-gray-400 italic">
+                            Nenhuma promoção encontrada. Cole um link acima para começar!
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('scrapeForm');
+        const btn = document.getElementById('submitBtn');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.getElementById('btnText');
+        const loadingMsg = document.getElementById('loadingMsg');
+
+        form.onsubmit = function() {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-wait');
+            spinner.style.display = 'block';
+            btnText.innerText = 'Processando...';
+            loadingMsg.classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>

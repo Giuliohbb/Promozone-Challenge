@@ -63,3 +63,20 @@ class BigQueryManager:
 
             except Exception as e:
                 logging.error(f"Erro no pipeline: {e}")
+
+    def list_promotions(self, limit: int = 20) -> List[Promotion]:
+        """Busca as promoções mais recentes do BigQuery."""
+        query = f"""
+            SELECT * FROM `{self.table_id}`
+            ORDER BY collected_at DESC
+            LIMIT {limit}
+        """
+        try:
+            query_job = self.client.query(query)
+            results = query_job.result()
+            
+            # Converte as linhas do BigQuery de volta para objetos Promotion (Pydantic)
+            return [Promotion(**dict(row)) for row in results]
+        except Exception as e:
+            logging.error(f"Erro ao buscar promoções: {e}")
+            return []

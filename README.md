@@ -21,41 +21,43 @@ O coletor foca em extrair dados de consultas do Mercado Livre, garantindo:
 Certifique-se de ter o Python 3.12+ instalado.
 
 - Clone o repositório
-\`\`\`bash
+```bash
 git clone https://github.com/Giuliohbb/Promozone-Challenge
 cd promozone-challenge
-\`\`\`
+```
 
 - Crie e ative o ambiente virtual
-\`\`\`
+```bash
 python3 -m venv .venv
 source .venv/bin/activate  # No Windows: .venv\Scripts\activate
-\`\`\`
+```
 
 - Instale as dependências
-\`\`\`
+```bash
 pip install -r requirements.txt
-\`\`\`
+```
 
 2. Configuração do .env com credenciais do Firecrawl e GCP seguindo o modelo abaixo:
-\`\`\`
+```bash
 FIRECRAWL_API_KEY=sua_chave_aqui
 GCP_PROJECT_ID=promozone-challenge
 GCP_DATASET_ID=promozone
-\`\`\`
+```
 
 3. Execução do pipeline
 - Siga a ordem apresentada para garantir a criação da infraestrutura antes da coleta de dados
 
 - Provisionamento do banco(Criação de database e Tabela necessários):
-\`\`\`
+```bash
 python create_table.py
-\`\`\`
+```
+
 
 - Execução do Scraper e Carga(Realiza a coleta via Firecrawl, normaliza os dados e faz o upload para o BigQuery com deduplicação):
-\`\`\`
+```bash
 python run_pipeline.py
-\`\`\`
+```
+
 
 **"Destaques Técnicos"**:
 * **Deduplicação Defensável:** Uso de estratégia de *Staging Table* + comando `MERGE` no BigQuery, garantindo que o mesmo produto com o mesmo preço não seja duplicado, mantendo a integridade histórica.

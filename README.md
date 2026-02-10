@@ -2,7 +2,7 @@
 
 Este projeto é um pipeline de dados *end-to-end* desenvolvido para o desafio técnico **Promozone**. O sistema realiza a coleta automatizada, normalização via IA, deduplicação em Data Warehouse e disponibilização dos dados através de uma interface web moderna.
 
-**Link do Projeto Online:** [https://promozone-service-619130145471.us-central1.run.app/scrape](https://promozone-service-619130145471.us-central1.run.app/scrape)
+**Link do Projeto Online:** [https://promozone-service-619130145471.us-central1.run.app/](https://promozone-service-619130145471.us-central1.run.app/)
 
 ---
 
@@ -43,26 +43,67 @@ O scraper não depende de seletores CSS frágeis que quebram com mudanças de la
 ---
 
 ## 🚀 Como Executar o Projeto
+1. Configuração das Variáveis de Ambiente
+O projeto depende de chaves externas para funcionar. Crie um arquivo chamado .env na raiz do projeto com as seguintes definições:
 
-### Localmente com Docker (Recomendado)
-Certifique-se de ter o Docker instalado e suas credenciais no arquivo `.env`.
+```Bash
 
-```bash
-# Build da imagem
-docker build -t promozone-app .
+# Chave da API do Firecrawl (Obtenha em firecrawl.dev)
+FIRECRAWL_API_KEY=fc-your-key-here
 
-# Execução do container
-docker run -p 8080:8080 --env-file .env promozone-app
+# Configurações do Google Cloud Platform
+GCP_PROJECT_ID=promozone-challenge
+GCP_DATASET_ID=promozone
 ```
 
-### Localmente com Python
-Clone o repositório e crie um ambiente virtual: python -m venv .venv.
+2. Credenciais do Google Cloud (Apenas para Local)
+Para rodar fora da nuvem (Local ou Docker local), você precisará de uma chave de conta de serviço:
 
-Instale as dependências: pip install -r requirements.txt.
+Gere um arquivo JSON de Service Account no Console do GCP com a permissão BigQuery Admin.
 
-Configure o arquivo .env com suas chaves (Firecrawl e GCP).
+Renomeie o arquivo para google-credentials.json e coloque-o na raiz do projeto.
 
-Inicie o servidor: uvicorn app.main:app --host 0.0.0.0 --port 8080.
+Atenção: Este arquivo deve ficar no .gitignore e não deve ser commitado.
+
+3. Execução Local (Python)
+Ideal para desenvolvimento e testes rápidos:
+
+```Bash
+
+# Clone e entre na pasta
+git clone https://github.com/Giuliohbb/Promozone-Challenge
+cd promozone-challenge
+
+# Crie e ative o ambiente virtual
+python3 -m venv .venv
+source .venv/bin/activate  # No Windows use: .venv\Scripts\activate
+
+# Instale as dependências
+pip install -r requirements.txt
+
+# Inicie o servidor FastAPI
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+```
+Acesse em: http://localhost:8080
+
+
+4. Execução via Docker (Container)
+Para garantir que o ambiente seja idêntico ao de produção no Cloud Run:
+
+```Bash
+
+# Build da imagem (Lembre-se do ponto no final)
+docker build -t promozone-app .
+
+# Execução passando o arquivo .env e montando o volume das credenciais
+docker run -p 8080:8080 \
+  --env-file .env \
+  -v $(pwd)/google-credentials.json:/app/google-credentials.json \
+  promozone-app
+
+```
+
+--- 
 
 ### 📁 Estrutura do Projeto
 app/main.py: Pontos de entrada da API e rotas da interface.
@@ -74,6 +115,15 @@ app/database.py: Gerenciamento do BigQuery, Staging e lógica de MERGE.
 app/models.py: Definição dos contratos de dados via Pydantic.
 
 templates/: Interface web desenvolvida com Tailwind CSS.
+
+---
+
+### 📈 Roadmap
+[ ] Gráficos de histórico de oscilação de preços.
+
+[ ] Alertas via Webhook para quedas de preço.
+
+[ ] Expansão para Amazon e Magalu.
 
 ---
 

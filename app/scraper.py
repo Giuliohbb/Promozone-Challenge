@@ -4,7 +4,6 @@ import logging
 import re
 from datetime import datetime
 from app.models import Promotion
-import json
 from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,7 +22,7 @@ class MLScraper:
             "Content-Type": "application/json"
         }
         
-        # Estrutura correta para Firecrawl v2: o schema vai DENTRO de formats
+        # Montagem do payload com a URL alvo e o schema desejado
         payload = {
             "url": url,
             "formats": [

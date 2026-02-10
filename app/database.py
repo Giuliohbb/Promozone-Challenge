@@ -19,10 +19,9 @@ class BigQueryManager:
         # Se estiver no Cloud Run, o Google injeta a variável K_SERVICE automaticamente
         if os.getenv("K_SERVICE"):
             logging.info("Ambiente Cloud Run: Usando credenciais nativas (IAM).")
-            # Aqui ele ignora o arquivo JSON e usa a permissão que você deu no terminal
             self.client = bigquery.Client(project=self.project_id)
         else:
-            # Localmente (no seu Samsung), ele ainda tenta usar o arquivo se existir
+            # Local ou outro ambiente: tenta usar o arquivo de credenciais
             cred_path = "google-credentials.json"
             if os.path.exists(cred_path):
                 logging.info(f"Local: Usando arquivo {cred_path}")
@@ -69,7 +68,7 @@ class BigQueryManager:
 
         except Exception as e:
             logging.error(f"Erro no pipeline: {e}")
-
+            
     def list_promotions(self, limit: int = 20) -> List[Promotion]:
         """Sua lógica de listagem original preservada."""
         query = f"""

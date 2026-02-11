@@ -84,7 +84,6 @@ pip install -r requirements.txt
 # Inicie o servidor FastAPI
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
-Acesse em: http://localhost:8080
 
 
 4. Execução via Docker (Container)
@@ -101,6 +100,22 @@ docker run -p 8080:8080 \
   -v $(pwd)/google-credentials.json:/app/google-credentials.json \
   promozone-app
 
+```
+
+---
+
+### 📊 Query de Validação (BigQuery)
+Para verificar os itens coletados nas últimas 24 horas, execute:
+
+```SQL
+SELECT 
+  marketplace, 
+  title, 
+  price, 
+  collected_at 
+FROM `promozone-challenge.promozone.promotions` 
+WHERE collected_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)
+ORDER BY collected_at DESC;
 ```
 
 --- 

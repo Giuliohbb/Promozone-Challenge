@@ -32,11 +32,11 @@ class BigQueryManager:
                 self.client = bigquery.Client(project=self.project_id)
 
     def insert_promotions(self, promotions: List[Promotion]):
-        """Sua lógica de MERGE original preservada."""
         if not promotions:
             logging.warning("Nenhuma promoção para inserir.")
-            return
+            return {"total": 0, "inseridos": 0, "duplicados": 0}
 
+        total_coletado = len(promotions)
         rows = []
         for p in promotions:
             p_dict = p.model_dump()
@@ -54,20 +54,47 @@ class BigQueryManager:
             load_job = self.client.load_table_from_json(rows, self.staging_table_id, job_config=job_config)
             load_job.result() 
 
+            # Lógica de MERGE para deduplicação
             merge_query = f"""
             MERGE `{self.table_id}` T
             USING `{self.staging_table_id}` S
             ON T.dedupe_key = S.dedupe_key
             WHEN NOT MATCHED THEN
-            INSERT (marketplace, item_id, url, title, price, original_price, discount_percent, seller, image_url, source, collected_at, dedupe_key)
-            VALUES (S.marketplace, S.item_id, S.url, S.title, CAST(S.price AS FLOAT64), CAST(S.original_price AS FLOAT64), CAST(S.discount_percent AS FLOAT64), S.seller, S.image_url, S.source, CAST(S.collected_at AS TIMESTAMP), S.dedupe_key)
+            INSERT (
+                marketplace, item_id, url, title, price, 
+                original_price, discount_percent, seller, 
+                image_url, source, collected_at, dedupe_key, 
+                inserted_at
+            )
+            VALUES (
+                S.marketplace, S.item_id, S.url, S.title, 
+                CAST(S.price AS FLOAT64), CAST(S.original_price AS FLOAT64), 
+                CAST(S.discount_percent AS FLOAT64), S.seller, 
+                S.image_url, S.source, CAST(S.collected_at AS TIMESTAMP), 
+                S.dedupe_key, CURRENT_TIMESTAMP()
+            )
             """
+                        
+            # Executa a query e captura o job para ler as estatísticas
+            query_job = self.client.query(merge_query)
+            query_job.result()
             
-            self.client.query(merge_query).result()
-            logging.info(f"Sucesso: {len(promotions)} itens movidos para a tabela principal.")
+            # Captura quantos foram REALMENTE inseridos (ignorando duplicados)
+            inseridos = query_job.num_dml_affected_rows
+            duplicados = total_coletado - inseridos
+
+            logging.info(f"--- Relatório Final de Ingestão ---")
+            logging.info(f"Coletados: {total_coletado} | Inseridos: {inseridos} | Duplicados: {duplicados}")
+
+            return {
+                "total": total_coletado,
+                "inseridos": inseridos,
+                "duplicados": duplicados
+            }
 
         except Exception as e:
-            logging.error(f"Erro no pipeline: {e}")
+            logging.error(f"Erro no pipeline: {e}") 
+            return {"total": total_coletado, "inseridos": 0, "duplicados": 0, "error": str(e)}
             
     def list_promotions(self, limit: int = 20) -> List[Promotion]:
         """Sua lógica de listagem original preservada."""

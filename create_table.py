@@ -21,7 +21,7 @@ def create_promotions_table():
     except Exception as e:
         print(f"Erro ao criar dataset: {e}")
 
-    # 3. Definir o Schema (Estrutura da Tabela) conforme o seu Model
+    # 3. Definir o Schema da Tabela
     schema = [
         bigquery.SchemaField("marketplace", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("item_id", "STRING", mode="REQUIRED"),
@@ -34,6 +34,7 @@ def create_promotions_table():
         bigquery.SchemaField("image_url", "STRING", mode="NULLABLE"),
         bigquery.SchemaField("source", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("collected_at", "TIMESTAMP", mode="REQUIRED"),
+        bigquery.SchemaField("inserted_at", "TIMESTAMP", mode="NULLABLE"),
         bigquery.SchemaField("dedupe_key", "STRING", mode="REQUIRED"),
     ]
 

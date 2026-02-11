@@ -39,27 +39,23 @@ async def read_root(request: Request):
 async def handle_scrape(request: Request, url: str = Form(...)):
     logging.info(f"--- Iniciando captura ao vivo: {url} ---")
     
-    try:
-        # 1. Executa o scraper
-        new_data = scraper.scrape_offers(url)
-        
-        if not new_data:
-            logging.warning(f"Atenção: O Firecrawl não encontrou produtos nesta URL.")
-        else:
-            logging.info(f"Sucesso! {len(new_data)} novos itens encontrados.")
-            # 2. Persiste no BigQuery
-            db_manager.insert_promotions(new_data)
-            logging.info("Dados sincronizados com o BigQuery.")
+    # 1. Coleta os dados usando o Scraper
+    items = scraper.scrape_offers(url)
+    
+    if not items:
+        status_msg = "Nenhum item encontrado ou erro de conexão."
+    else:
+        # 2. Insere no banco e recebe o contador de novos vs duplicados
+        relatorio = db_manager.insert_promotions(items)
+        status_msg = f"Sucesso! {relatorio['inseridos']} novos itens salvos ({relatorio['duplicados']} duplicados ignorados)."
 
-    except Exception as e:
-        logging.error(f"Erro crítico durante o scrape: {e}")
-
-    # 3. Busca os dados (o MERGE garante que os novos apareçam aqui se forem inéditos)
+    # 3. Busca a lista atualizada para exibir na tabela
     promotions = db_manager.list_promotions(limit=15)
     
     return templates.TemplateResponse("index.html", {
         "request": request, 
-        "promotions": promotions
+        "promotions": promotions,
+        "status": status_msg
     })
 
 # --- ROTAS DE API (JSON) ---
@@ -80,3 +76,4 @@ if __name__ == "__main__":
     import uvicorn
     # Rodando na porta 8000 para teste local
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

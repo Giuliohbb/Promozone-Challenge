@@ -16,51 +16,63 @@ class MLScraper:
         self.endpoint = "https://api.firecrawl.dev/v2/scrape"
 
     def scrape_offers(self, url: str):
-        # Configuração dos headers e payload para a API do Firecrawl
+        # Limpa a URL para evitar parâmetros que confundem o crawler
+        clean_url = url.split('#')[0].split('?')[0]
+        
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
-        # Montagem do payload com a URL alvo e o schema desejado
         payload = {
-            "url": url,
-            "formats": [
-                {
-                    "type": "json",
-                    "schema": self._get_schema()
-                }
-            ],
-            "onlyMainContent": True  # Ajuda a IA a focar nos produtos
+            # Configuração específica para extrair dados do Mercado Livre
+            "url": clean_url,
+            "formats": ["json"],
+            "jsonOptions": {
+                "schema": self._get_schema(),
+                "prompt": (
+                    "Extraia apenas anúncios REAIS e VISÍVEIS na página. "
+                    "NÃO invente nomes como 'Carro A' ou 'Produto 1'. "
+                    "Se não encontrar anúncios reais, retorne uma lista vazia. "
+                    "Foque nos títulos reais dos veículos (ex: 'Toyota Corolla 2023') e preços reais."
+                )
+            },
+            "onlyMainContent": False, # Importante para páginas de busca/lista
+            "waitFor": 3000 # Espera até 3 segundos para o conteúdo ser carregado
         }
 
-        logging.info(f"Tentando extração em categoria: {url}")
-        response = requests.post(self.endpoint, json=payload, headers=headers)
+        logging.info(f"Tentando extração rigorosa em: {clean_url}")
+        response = requests.post("https://api.firecrawl.dev/v1/scrape", json=payload, headers=headers)
         
         if response.status_code == 200:
+            # Extração bem-sucedida
             data = response.json()
             extracted_json = data.get('data', {}).get('json', {})
-            logging.info(f"IA processou a página com sucesso.") 
-            
             raw_products = extracted_json.get('products', [])
-            return self._normalize(raw_products, url)
+            
+            logging.info(f"Extração bruta obtida: {len(raw_products)} itens. Iniciando normalização...")
+            return self._normalize(raw_products, source_url=clean_url)
         
-        logging.error(f"Erro na API Firecrawl: {response.status_code} - {response.text}")
+        logging.error(f"Erro na API Firecrawl: {response.status_code}")
         return []
 
     def _get_schema(self):
-        # Define o schema que a IA deve seguir para extrair os dados. Isso ajuda a garantir consistência e facilita a normalização posterior.
+        # Define o schema JSON esperado para a extração dos dados
         return {
             "type": "object",
             "properties": {
                 "products": {
                     "type": "array",
+                    "description": "Lista completa de produtos da página",
                     "items": {
                         "type": "object",
                         "properties": {
                             "title": {"type": "string"},
                             "price": {"type": "number"},
-                            "url": {"type": "string"}
+                            "original_price": {"type": "number", "nullable": True},
+                            "url": {"type": "string"},
+                            "seller": {"type": "string", "nullable": True},
+                            "image_url": {"type": "string", "nullable": True}
                         },
                         "required": ["title", "price", "url"]
                     }
@@ -89,12 +101,15 @@ class MLScraper:
                 discount = round((1 - (price / orig_price)) * 100, 2)
 
             promo = Promotion(
+                marketplace="mercado_livre",
                 item_id=item_id,
                 title=item['title'],
                 price=price,
-                original_price=orig_price,
+                original_price=item.get('original_price'),
                 discount_percent=discount,
                 url=clean_url,
+                seller=item.get('seller'), 
+                image_url=item.get('image_url'), 
                 source=source_url,
                 collected_at=datetime.utcnow(),
                 dedupe_key=f"mercado_livre_{item_id}_{price}"

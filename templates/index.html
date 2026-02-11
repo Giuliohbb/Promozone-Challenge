@@ -33,10 +33,17 @@
                     </button>
                 </div>
                 <p id="loadingMsg" class="text-sm text-blue-600 hidden font-medium animate-pulse">
-                    🤖 A IA está minerando os dados... Isso pode levar até 60 segundos.
+                    🤖 A IA está minerando os dados... Por favor, aguarde.
                 </p>
             </form>
         </div>
+
+        {% if status %}
+        <div class="mb-6 p-4 rounded-lg {% if 'Erro' in status or 'Atenção' in status %}bg-red-100 text-red-700 border border-red-200{% else %}bg-green-100 text-green-700 border border-green-200{% endif %} flex items-center shadow-sm">
+            <span class="mr-2">{% if 'Erro' in status %}⚠️{% else %}✅{% endif %}</span>
+            <span class="font-medium">{{ status }}</span>
+        </div>
+        {% endif %}
 
         <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
             <table class="w-full text-left">

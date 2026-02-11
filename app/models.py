@@ -1,10 +1,10 @@
 from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
 class Promotion(BaseModel):
-    # Definindo o modelo de dados para as promoções, incluindo a dedupe_key para garantir a unicidade
-    marketplace: str = "mercado_livre"
+    # Campos conforme o schema definido no BigQuery
+    marketplace: str
     item_id: str
     url: str
     title: str
@@ -15,4 +15,5 @@ class Promotion(BaseModel):
     image_url: Optional[str] = None
     source: str
     collected_at: datetime
-    dedupe_key: str 
+    dedupe_key: str
+    inserted_at: Optional[datetime] = None

@@ -29,6 +29,53 @@ O sistema foi desenhado para ser resiliente e escalável, utilizando tecnologias
 
 ---
 
+### Diagrama do Projeto
+```mermaid
+
+graph TD
+    %% Entidades
+    User((Usuário))
+    
+    subgraph GCP_Cloud_Run [Google Cloud Run - FastAPI]
+        API[App Interface /scrape]
+        Scraper[MLScraper Engine]
+        Models[Pydantic Validation]
+    end
+
+    subgraph External_Services [APIs Externas]
+        FC[Firecrawl API v1 - LLM Extraction]
+        ML[(Mercado Livre)]
+    end
+
+    subgraph BigQuery_Data_Warehouse [BigQuery Storage]
+        STG[Staging Table - Temporary]
+        PROD[(Production Table - Promotions)]
+        Merge{SQL MERGE Logic}
+    end
+
+    %% Fluxo
+    User -->|Envia URL| API
+    API --> Scraper
+    Scraper -->|Request + Schema| FC
+    FC -.->|Crawl| ML
+    ML -.->|HTML| FC
+    FC -->|Structured JSON| Scraper
+    Scraper --> Models
+    Models -->|Clean Data| STG
+    STG --> Merge
+    Merge -->|Deduplicate & Timestamp| PROD
+    PROD -->|List| API
+    API -->|HTML + Status| User
+
+    %% Estilização
+    style GCP_Cloud_Run fill:#f1f5f9,stroke:#3b82f6,stroke-width:2px
+    style BigQuery_Data_Warehouse fill:#ecfdf5,stroke:#10b981,stroke-width:2px
+    style FC fill:#fff7ed,stroke:#f97316,stroke-width:2px
+
+```
+
+---
+
 ## 🌟 Diferenciais da Engenharia
 
 ### 1. Deduplicação Inteligente (MERGE Strategy)
@@ -130,6 +177,11 @@ app/database.py: Gerenciamento do BigQuery, Staging e lógica de MERGE.
 app/models.py: Definição dos contratos de dados via Pydantic.
 
 templates/: Interface web desenvolvida com Tailwind CSS.
+
+---
+### Visualização dos Dados
+
+![BigQuery Data Preview](bigquery_preview.png)
 
 ---
 

@@ -181,7 +181,7 @@ templates/: Interface web desenvolvida com Tailwind CSS.
 ---
 ### Visualização dos Dados
 
-![BigQuery Data Preview](bigquery_preview.png)
+![BigQuery Data Preview](Bigquery_preview.png)
 
 ---
 
